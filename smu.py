@@ -3,6 +3,7 @@
 import os;
 import traceback;
 import logging;
+import pandas;
 from sys import argv;
 from datetime import datetime;
 
@@ -94,6 +95,32 @@ def opt4_log_results(fileName, results):
 	results['file'] = fileName
 	log("Results of file " + fileName + ":" + str(results));
 
+def opt1_empty_files(fileName):
+	df = pandas.read_csv(fileName);
+
+	df_filtered = df.query("ResultCode == 'ITEM_IS_EMPTY'");
+
+	for index, row in df_filtered.iterrows():
+		#print(row['SourcePath']);
+		itemFilePath = row['SourcePath'];
+		print(itemFilePath)
+
+		# Check if File still exists
+		if (os.path.exists(itemFilePath) and os.path.isfile(itemFilePath)):
+			print('OK')
+			if(os.path.getsize(itemFilePath) == 0):
+				log("The path {} is a empty file and is goint to be deleted".format(itemFilePath))
+				#os.remove(itemFilePath);
+		else:
+			log("The path {} is not a file or does not exist".format(itemFilePath))
+
+
+def opt3_long_path(fileName):
+	df = pandas.read_csv(fileName);
+
+	df_filtered = df.query("ResultCode == 'PATH_LEN_GT_300'");
+	print(df_filtered);
+
 def get_log_file():
 	global log_file
 	if log_file is None:
@@ -137,25 +164,27 @@ try:
 
 				while True:
 
-					if option == '1':
+					if option == '1': ## OPTION Process Empty Files
 						log('1')
-						again = False
+						opt1_empty_files(fileName);
+						again = False;
 
-					elif option == '2':
+					elif option == '2': ## OPTION Process Invalid Sharepoint Names
 						log('2')
 						again = False
-					elif option == '3':
+					elif option == '3': ## OPTION Process Long Paths (GT 300)
 						log('3')
+						opt3_long_path(fileName);
 						again = False
-					elif option == '5':
+					elif option == '5': ## OPTION Show results on screen
 						log('5')
 						fingerprint(results)
 						again = False
-					elif option == '4':
+					elif option == '4': ## OPTION Log results and exit
 						log('4')
 						opt4_log_results(fileName, results);
 						break;
-					elif option == '6':
+					elif option == '6': ## OPTION Only exit
 						log('6')
 						break;
 
@@ -165,7 +194,7 @@ try:
 						again = True
 						option = input("\nWe came back to the start. Which option now? ")
 
-					# Program Final
+					# Program end
 				
 			else:
 				print("Invalid file layout")
