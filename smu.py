@@ -106,10 +106,12 @@ def opt1_empty_files(fileName):
 
 		# Check if File still exists
 		if (validate_file(itemFilePath)):
-			
+
+		# Check if File still exists
+		if (os.path.exists(itemFilePath) and os.path.isfile(itemFilePath)):
 			if(os.path.getsize(itemFilePath) == 0):
 				log("The path {} is a empty file and is goint to be deleted".format(itemFilePath))
-				#os.remove(itemFilePath);
+				os.remove(itemFilePath);
 		else:
 			log("The path {} is not a file or does not exist".format(itemFilePath))
 
@@ -143,7 +145,6 @@ def opt2_check_similarity(filePath):
 
 	return False
 
-
 def opt3_long_path(fileName):
 	df = pandas.read_csv(fileName);
 
@@ -165,7 +166,6 @@ def opt3_long_path(fileName):
 				print("FIX FILE: {} | {} exceding chars.".format(itemFilePath, excedingChars));
 		else:
 			log("WARN: The path {} is not PATH_LEN_GT_300".format(itemFilePath))
-
 
 def get_log_file():
 	global log_file
