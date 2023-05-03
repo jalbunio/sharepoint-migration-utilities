@@ -106,9 +106,6 @@ def opt1_empty_files(fileName):
 
 		# Check if File still exists
 		if (validate_file(itemFilePath)):
-
-		# Check if File still exists
-		if (os.path.exists(itemFilePath) and os.path.isfile(itemFilePath)):
 			if(os.path.getsize(itemFilePath) == 0):
 				log("The path {} is a empty file and is goint to be deleted".format(itemFilePath))
 				os.remove(itemFilePath);
