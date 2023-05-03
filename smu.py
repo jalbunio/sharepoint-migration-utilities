@@ -103,23 +103,69 @@ def opt1_empty_files(fileName):
 	for index, row in df_filtered.iterrows():
 		#print(row['SourcePath']);
 		itemFilePath = row['SourcePath'];
-		print(itemFilePath)
 
 		# Check if File still exists
-		if (os.path.exists(itemFilePath) and os.path.isfile(itemFilePath)):
-			print('OK')
+		if (validate_file(itemFilePath)):
+			
 			if(os.path.getsize(itemFilePath) == 0):
 				log("The path {} is a empty file and is goint to be deleted".format(itemFilePath))
 				#os.remove(itemFilePath);
 		else:
 			log("The path {} is not a file or does not exist".format(itemFilePath))
 
+def opt2_invalid_names(fileName):
+	df = pandas.read_csv(fileName);
+
+	df_filtered = df.query("ResultCode == 'INVALID_SHAREPOINT_NAME'");
+
+	for index, row in df_filtered.iterrows():
+		itemFilePath = row['SourcePath'];
+		itemName = row['SourceBasename'];
+		itemFilePathLen = len(itemFilePath);
+
+		if(itemName.startswith("~$")):
+			if(opt2_check_similarity(itemFilePath)):
+				print("SIMILARITY: {}".format(itemFilePath))
+			else:
+				print("SIMILARITY: {}".format(itemFilePath))
+		else:
+			print(itemName);
+
+def opt2_check_similarity(filePath):
+	filePathArray = filePath.split("~$");
+	fullpath = filePathArray[0];
+	itemName = filePathArray[1];
+
+	print("CHECK SIMILARITY ON: {}".format(fullpath))
+	for filepathitem in os.listdir(fullpath):
+		if(filepathitem.endswith(itemName) and (filepathitem != filePath)):
+			return True
+
+	return False
+
 
 def opt3_long_path(fileName):
 	df = pandas.read_csv(fileName);
 
 	df_filtered = df.query("ResultCode == 'PATH_LEN_GT_300'");
-	print(df_filtered);
+
+	for index, row in df_filtered.iterrows():
+		itemFilePath = row['SourcePath'];
+		itemName = row['SourceBasename'];
+		itemFilePathLen = len(itemFilePath);
+
+		if(itemFilePathLen > 300):
+			itemNameLen = len(itemName);
+
+			excedingChars = abs(300 - itemFilePathLen);
+
+			if(itemFilePathLen - len(itemName) > 299):
+				print("FIX PATH: {} | {} exceding chars.".format(itemFilePath, excedingChars));
+			else:
+				print("FIX FILE: {} | {} exceding chars.".format(itemFilePath, excedingChars));
+		else:
+			log("WARN: The path {} is not PATH_LEN_GT_300".format(itemFilePath))
+
 
 def get_log_file():
 	global log_file
@@ -172,6 +218,7 @@ try:
 
 					elif option == '2': ## OPTION Process Invalid Sharepoint Names
 						log('2')
+						opt2_invalid_names(fileName);
 						again = False
 					elif option == '3': ## OPTION Process Long Paths (GT 300)
 						log('3')
