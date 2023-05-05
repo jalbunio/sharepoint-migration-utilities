@@ -6,6 +6,7 @@ import logging;
 import pandas;
 from sys import argv;
 from datetime import datetime;
+from pyautogui import typewrite;
 
 LOG_NAME = 'smu_log.txt'
 log_file = None
@@ -27,6 +28,8 @@ LAYOUT_REPORT = '"TransactionId","Timestamp","SourcePath","SourceBasename","Sour
 [11]SourceExtension
 
 '''
+
+# ========= FUNCTIONS START ============ #
 
 def validate_file(fileNameArg):
 	if os.path.exists(fileNameArg) and os.path.isfile(fileNameArg):
@@ -107,7 +110,7 @@ def opt1_empty_files(fileName):
 		# Check if File still exists
 		if (validate_file(itemFilePath)):
 			if(os.path.getsize(itemFilePath) == 0):
-				log("The path {} is a empty file and is goint to be deleted".format(itemFilePath))
+				log("The path {} is a empty file and is going to be deleted".format(itemFilePath))
 				os.remove(itemFilePath);
 		else:
 			log("The path {} is not a file or does not exist".format(itemFilePath))
@@ -122,24 +125,44 @@ def opt2_invalid_names(fileName):
 		itemName = row['SourceBasename'];
 		itemFilePathLen = len(itemFilePath);
 
-		if(itemName.startswith("~$")):
-			if(opt2_check_similarity(itemFilePath)):
-				print("SIMILARITY: {}".format(itemFilePath))
+		# Check if File still exists
+		if (validate_file(itemFilePath)):
+			if(itemName.startswith("~$")):
+				if(opt2_check_similarity(itemFilePath)):
+					log("The path {} is a TEMP file and is going to be deleted".format(itemFilePath))
+					#os.remove(itemFilePath);
+				else:
+					rename_file(itemFilePath);
+					
 			else:
-				print("SIMILARITY: {}".format(itemFilePath))
-		else:
-			print(itemName);
+				rename_file(itemFilePath);
+				
+def rename_file(oldPath):
+	print("The following file needs to be renamed:");
+	print(oldPath);
+	#typewrite(oldPath);
+	new_name = input();
+	if(new_name):
+		os.rename(oldPath, new_name);
+		return True;
+	else:
+		print("   SKIP   ");
+		return False;
 
 def opt2_check_similarity(filePath):
 	filePathArray = filePath.split("~$");
 	fullpath = filePathArray[0];
 	itemName = filePathArray[1];
 
-	print("CHECK SIMILARITY ON: {}".format(fullpath))
+	#print("CHECK SIMILARITY ON: {}".format(fullpath))
 	for filepathitem in os.listdir(fullpath):
-		if(filepathitem.endswith(itemName) and (filepathitem != filePath)):
-			return True
-
+		#print("CHECK: {} ".format(filepathitem));
+		
+		if(filepathitem.endswith(itemName)):
+			if ("~$"+itemName) not in filepathitem:
+				#print("SIMILARITY FOUND: {}".format(filepathitem))
+				return True
+	#print("NO SIMILARITY FOUND")
 	return False
 
 def opt3_long_path(fileName):
@@ -151,18 +174,20 @@ def opt3_long_path(fileName):
 		itemFilePath = row['SourcePath'];
 		itemName = row['SourceBasename'];
 		itemFilePathLen = len(itemFilePath);
+		
+		# Check if File still exists
+		if (validate_file(itemFilePath)):
+			if(itemFilePathLen > 300):
+				itemNameLen = len(itemName);
 
-		if(itemFilePathLen > 300):
-			itemNameLen = len(itemName);
+				excedingChars = abs(300 - itemFilePathLen);
 
-			excedingChars = abs(300 - itemFilePathLen);
-
-			if(itemFilePathLen - len(itemName) > 299):
-				print("FIX PATH: {} | {} exceding chars.".format(itemFilePath, excedingChars));
+				if(itemFilePathLen - len(itemName) > 299):
+					print("FIX PATH: {} | {} exceding chars.".format(itemFilePath, excedingChars));
+				else:
+					print("FIX FILE: {} | {} exceding chars.".format(itemFilePath, excedingChars));
 			else:
-				print("FIX FILE: {} | {} exceding chars.".format(itemFilePath, excedingChars));
-		else:
-			log("WARN: The path {} is not PATH_LEN_GT_300".format(itemFilePath))
+				log("WARN: The path {} is not PATH_LEN_GT_300".format(itemFilePath))
 
 def get_log_file():
 	global log_file
@@ -180,6 +205,7 @@ def log(text):
 def close_log():
 	log_file.close();
 
+# ========= FUNCTIONS END ============ #
 
 fileName = argv[1];
 
