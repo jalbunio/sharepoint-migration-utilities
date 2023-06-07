@@ -10,6 +10,8 @@ from pyautogui import typewrite;
 
 LOG_NAME = 'smu_log.txt'
 log_file = None
+LOG_RESULTS_NAME = 'smu_results.csv'
+log_results_file = None
 LAYOUT_REPORT = '"TransactionId","Timestamp","SourcePath","SourceBasename","SourceType","SourceSize","SourceModifiedAt","SourceCreatedAt","SourceAclsTotal","SourceAccessedAt","ResultCode","SourceExtension"';
 
 '''
@@ -110,10 +112,12 @@ def opt1_empty_files(fileName):
 		# Check if File still exists
 		if (validate_file(itemFilePath)):
 			if(os.path.getsize(itemFilePath) == 0):
-				log("The path {} is a empty file and is going to be deleted".format(itemFilePath))
+				log("The path {} is a empty file and is going to be deleted".format(itemFilePath));
 				os.remove(itemFilePath);
+				log_result(fileName, itemFilePath, "ITEM_IS_EMPTY", "DELETE", "The path {} is a empty file and is going to be deleted".format(itemFilePath));
 		else:
 			log("The path {} is not a file or does not exist".format(itemFilePath))
+			log_result(fileName, itemFilePath, "ITEM_IS_EMPTY", "SKIP", "The path {} is not a file or does not exist".format(itemFilePath));
 
 def opt2_invalid_names(fileName):
 	df = pandas.read_csv(fileName);
@@ -130,12 +134,19 @@ def opt2_invalid_names(fileName):
 			if(itemName.startswith("~$")):
 				if(opt2_check_similarity(itemFilePath)):
 					log("The path {} is a TEMP file and is going to be deleted".format(itemFilePath))
-					#os.remove(itemFilePath);
+					os.remove(itemFilePath);
+					log_result(fileName, itemFilePath, "INVALID_SHAREPOINT_NAME", "DELETE", "The path {} is a TEMP file and is going to be deleted".format(itemFilePath));
 				else:
+					log_result(fileName, itemFilePath, "INVALID_SHAREPOINT_NAME", "RENAME PROMPT", "");
 					rename_file(itemFilePath);
 					
 			else:
-				rename_file(itemFilePath);
+				if (itemFilePath.endswith("desktop.ini")):
+					os.remove(itemFilePath);
+					log_result(fileName, itemFilePath, "INVALID_SHAREPOINT_NAME", "DELETE", "The path {} is a DESKTOP.INI file and is going to be deleted".format(itemFilePath));
+				else:
+					log_result(fileName, itemFilePath, "INVALID_SHAREPOINT_NAME", "RENAME PROMPT", "");
+					rename_file(itemFilePath);
 				
 def rename_file(oldPath):
 	print("The following file needs to be renamed:");
@@ -144,9 +155,11 @@ def rename_file(oldPath):
 	new_name = input();
 	if(new_name):
 		os.rename(oldPath, new_name);
+		log_result("", oldPath, "RENAMED", new_name, "");
 		return True;
 	else:
 		print("   SKIP   ");
+		log_result("", oldPath, "", "SKIP", "");
 		return False;
 
 def opt2_check_similarity(filePath):
@@ -183,11 +196,12 @@ def opt3_long_path(fileName):
 				excedingChars = abs(300 - itemFilePathLen);
 
 				if(itemFilePathLen - len(itemName) > 299):
-					print("FIX PATH: {} | {} exceding chars.".format(itemFilePath, excedingChars));
+					log_result(fileName, itemFilePath, "PATH_LEN_GT_300", "NONE", "FIX PATH: {} | {} exceding chars.".format(itemFilePath, excedingChars));
 				else:
-					print("FIX FILE: {} | {} exceding chars.".format(itemFilePath, excedingChars));
+					log_result(fileName, itemFilePath, "PATH_LEN_GT_300", "NONE", "FIX FILE: {} | {} exceding chars.".format(itemFilePath, excedingChars));
 			else:
 				log("WARN: The path {} is not PATH_LEN_GT_300".format(itemFilePath))
+				log_result(fileName, itemFilePath, "PATH_LEN_GT_300", "NONE", "WARN: The path {} is not PATH_LEN_GT_300".format(itemFilePath));
 
 def get_log_file():
 	global log_file
@@ -195,15 +209,31 @@ def get_log_file():
 		log_file = open(LOG_NAME,'a');
 	
 	return log_file
+	
+def get_log_results_file():
+	global log_results_file
+	if log_results_file is None:
+		log_results_file = open(LOG_RESULTS_NAME,'a');
+	
+	return log_results_file
 
 def log(text):
 	now = datetime.now();
 	dt = now.strftime("%Y-%m-%d %H:%M:%S");
 	get_log_file().write(dt + ' -- ' + text + '\n');
 	get_log_file().flush();
+	
+def log_result(fileProcessing, path, state, result, message):
+	now = datetime.now();
+	dt = now.strftime("%Y-%m-%d %H:%M:%S");
+	get_log_results_file().write(dt + '|' + fileProcessing + '|' + path + '|' + state + '|' + result + '|' + message + '\n');
+	get_log_results_file().flush();
 
 def close_log():
 	log_file.close();
+	
+def close_log_results():
+	log_results_file.close();
 
 # ========= FUNCTIONS END ============ #
 
@@ -258,6 +288,8 @@ try:
 					elif option == '6': ## OPTION Only exit
 						log('6')
 						break;
+						
+					print("Processing {} option finished".format(option))
 
 					if again :
 						option = input("\nSorry... Which option? ")
@@ -278,3 +310,4 @@ except Exception as e:
 finally:
 	log('Closing program...');
 	close_log();
+	close_log_results();
