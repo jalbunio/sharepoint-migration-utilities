@@ -136,6 +136,10 @@ def opt2_invalid_names(fileName):
 					log("The path {} is a TEMP file and is going to be deleted".format(itemFilePath))
 					os.remove(itemFilePath);
 					log_result(fileName, itemFilePath, "INVALID_SHAREPOINT_NAME", "DELETE", "The path {} is a TEMP file and is going to be deleted".format(itemFilePath));
+				elif opt2_check_tiny_file(itemFilePath):
+					log("The path {} is a TEMP and TINY file and is going to be deleted".format(itemFilePath))
+					os.remove(itemFilePath);
+					log_result(fileName, itemFilePath, "INVALID_SHAREPOINT_NAME", "DELETE", "The path {} is a TEMP and TINY file and is going to be deleted".format(itemFilePath));
 				else:
 					log_result(fileName, itemFilePath, "INVALID_SHAREPOINT_NAME", "RENAME PROMPT", "");
 					rename_file(itemFilePath);
@@ -177,6 +181,13 @@ def opt2_check_similarity(filePath):
 				return True
 	#print("NO SIMILARITY FOUND")
 	return False
+	
+def opt2_check_tiny_file(filePath):
+	
+	if(os.path.getsize(filePath) < 1000):
+		return True
+	else:
+		return False
 
 def opt3_long_path(fileName):
 	df = pandas.read_csv(fileName);
